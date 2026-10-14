@@ -21,6 +21,12 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
+  // Set status bar style
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+  ));
+
   runApp(
     MultiProvider(
       providers: [
@@ -51,7 +57,19 @@ class _TailorShopAppState extends State<TailorShopApp> {
 
   Future<void> _init() async {
     final settings = context.read<SettingsProvider>();
+    final customers = context.read<CustomerProvider>();
+    final orders = context.read<OrderProvider>();
+
+    // Load settings first (needed for theme)
     await settings.loadSettings();
+
+    // Then load data concurrently for faster startup
+    await Future.wait([
+      customers.loadCustomers(),
+      orders.loadOrders(),
+      orders.loadDashboardStats(),
+    ]);
+
     if (mounted) setState(() => _initialized = true);
   }
 
@@ -80,6 +98,13 @@ class _TailorShopAppState extends State<TailorShopApp> {
       useMaterial3: true,
       colorScheme: colorScheme,
       fontFamily: 'Roboto',
+      // Faster page transitions
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       appBarTheme: AppBarTheme(
         centerTitle: false,
         elevation: 0,
@@ -149,8 +174,53 @@ class _TailorShopAppState extends State<TailorShopApp> {
 }
 
 /// Splash / loading screen shown while settings are initializing
-class _SplashScreen extends StatelessWidget {
+class _SplashScreen extends StatefulWidget {
   const _SplashScreen();
+
+  @override
+  State<_SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<_SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _logoScale;
+  late Animation<double> _logoOpacity;
+  late Animation<double> _textOpacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..forward();
+
+    _logoScale = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
+      ),
+    );
+    _logoOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
+      ),
+    );
+    _textOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.4, 0.8, curve: Curves.easeIn),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -160,52 +230,91 @@ class _SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // App logo
-            Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.4),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
+            // Animated logo
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: _logoOpacity.value,
+                  child: Transform.scale(
+                    scale: _logoScale.value,
+                    child: child,
                   ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(28),
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  fit: BoxFit.cover,
+                );
+              },
+              child: Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFD54F).withOpacity(0.3),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.4),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(8),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 32),
-            const Text(
-              'G Tailoring',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Shop Manager',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-                letterSpacing: 2,
+            AnimatedBuilder(
+              animation: _textOpacity,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: _textOpacity.value,
+                  child: child,
+                );
+              },
+              child: const Column(
+                children: [
+                  Text(
+                    'G Tailoring',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Shop Manager',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 48),
-            const CircularProgressIndicator(
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(Colors.white),
-              strokeWidth: 2,
+            SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(Color(0xFFFFD54F)),
+                strokeWidth: 2.5,
+                backgroundColor: Colors.white.withOpacity(0.1),
+              ),
             ),
           ],
         ),
@@ -233,35 +342,23 @@ class _MainNavState extends State<MainNav> {
     _NavItem(icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart, label: 'Reports'),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CustomerProvider>().loadCustomers();
-      context.read<OrderProvider>().loadOrders();
-      context.read<OrderProvider>().loadDashboardStats();
-    });
-  }
+  // Lazily build pages only when needed to reduce initial load
+  late final List<Widget> _pages = const [
+    HomeScreen(),
+    CustomersScreen(),
+    OrdersScreen(filterStatus: null),
+    SearchScreen(),
+    ReportsScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: _currentIndex == 4
-          ? null // Reports has its own AppBar
-          : _currentIndex == 0
-              ? null // Home has its own AppBar via SliverAppBar
-              : null,
       body: IndexedStack(
         index: _currentIndex,
-        children: const [
-          HomeScreen(),
-          CustomersScreen(),
-          OrdersScreen(filterStatus: null),
-          SearchScreen(),
-          ReportsScreen(),
-        ],
+        children: _pages,
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
@@ -274,7 +371,8 @@ class _MainNavState extends State<MainNav> {
                 ))
             .toList(),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        animationDuration: const Duration(milliseconds: 300),
+        animationDuration: const Duration(milliseconds: 200),
+        height: 65,
       ),
       drawer: _buildDrawer(context, theme),
     );
@@ -287,11 +385,12 @@ class _MainNavState extends State<MainNav> {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  theme.colorScheme.primary,
-                  theme.colorScheme.primaryContainer,
+                  Color(0xFF2C1200),
+                  Color(0xFF3E1F00),
+                  Color(0xFF5C3D11),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -300,23 +399,45 @@ class _MainNavState extends State<MainNav> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Image.asset(
-                  'assets/images/logo.png',
-                  height: 70,
-                  width: 70,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => CircleAvatar(
-                    radius: 35,
-                    backgroundColor: Colors.white24,
-                    child: Icon(Icons.store, size: 36,
-                        color: theme.colorScheme.onPrimary),
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFFFFD54F).withOpacity(0.5),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFFD54F).withOpacity(0.2),
+                        blurRadius: 12,
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      color: Colors.white,
+                      padding: const EdgeInsets.all(4),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => CircleAvatar(
+                          radius: 28,
+                          backgroundColor: Colors.white24,
+                          child: Icon(Icons.store, size: 30,
+                              color: theme.colorScheme.onPrimary),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
                   settings.shopName,
-                  style: TextStyle(
-                    color: theme.colorScheme.onPrimary,
+                  style: const TextStyle(
+                    color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -325,7 +446,7 @@ class _MainNavState extends State<MainNav> {
                   Text(
                     settings.ownerName,
                     style: TextStyle(
-                      color: theme.colorScheme.onPrimary.withOpacity(0.8),
+                      color: Colors.white.withOpacity(0.8),
                       fontSize: 13,
                     ),
                   ),

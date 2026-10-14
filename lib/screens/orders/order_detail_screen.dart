@@ -8,6 +8,7 @@ import '../../providers/order_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/constants.dart';
 import '../../utils/helpers.dart';
+import '../../widgets/bill_widget.dart';
 import '../delivery/delivery_screen.dart';
 import 'add_order_screen.dart';
 
@@ -104,6 +105,26 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         title: Text(order.orderNumber,
             style: const TextStyle(fontWeight: FontWeight.bold)),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.receipt_long_outlined),
+            tooltip: 'View Bill',
+            onPressed: () {
+              final settings = context.read<SettingsProvider>();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BillPreviewScreen(
+                    order: order,
+                    shopName: settings.shopName,
+                    ownerName: settings.ownerName,
+                    phone: settings.phone,
+                    address: settings.address,
+                    currency: settings.currency,
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             onPressed: () async {
@@ -344,7 +365,35 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 ),
               ],
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+
+              // ── View Bill Button ──────────────────
+              FilledButton.icon(
+                onPressed: () {
+                  final settings = context.read<SettingsProvider>();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BillPreviewScreen(
+                        order: order,
+                        shopName: settings.shopName,
+                        ownerName: settings.ownerName,
+                        phone: settings.phone,
+                        address: settings.address,
+                        currency: settings.currency,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.receipt_long_outlined),
+                label: const Text('View Bill / Screenshot'),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  backgroundColor: const Color(0xFF5C3D11),
+                ),
+              ),
+
+              const SizedBox(height: 12),
 
               // Action buttons
               if (order.orderStatus != AppConstants.statusDelivered) ...[

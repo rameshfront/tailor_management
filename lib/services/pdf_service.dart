@@ -295,7 +295,312 @@ class PdfService {
         ],
       ),
     );
-    return _savePdf(pdf, 'customer_report');
+  /// Generate a professional order bill / invoice PDF using dynamic shop settings & customer measurements
+  Future<File> generateOrderBillPdf({
+    required Order order,
+    required String shopName,
+    required String ownerName,
+    required String phone,
+    required String address,
+    required String currency,
+  }) async {
+    final pdf = pw.Document();
+
+    final orderDate = Helpers.parseDate(order.orderDate);
+    final deliveryDate = order.deliveryDate != null
+        ? Helpers.parseDate(order.deliveryDate!)
+        : null;
+
+    final m = order.measurement;
+    final hasMeasurements = m != null && !m.isEmpty;
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (ctx) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            // Shop Header
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      shopName.isNotEmpty ? shopName : 'Tailor Shop',
+                      style: pw.TextStyle(
+                        fontSize: 22,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.brown900,
+                      ),
+                    ),
+                    if (ownerName.isNotEmpty)
+                      pw.Text(
+                        'Prop: $ownerName',
+                        style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey800),
+                      ),
+                    if (phone.isNotEmpty)
+                      pw.Text(
+                        'Cell: $phone',
+                        style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey800),
+                      ),
+                    if (address.isNotEmpty)
+                      pw.Text(
+                        address,
+                        style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+                      ),
+                  ],
+                ),
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: [
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.brown900,
+                        borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
+                      ),
+                      child: pw.Text(
+                        'INVOICE / BILL',
+                        style: pw.TextStyle(
+                          color: PdfColors.white,
+                          fontSize: 12,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    pw.SizedBox(height: 6),
+                    pw.Text(
+                      'Bill No: ${order.orderNumber}',
+                      style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+                    ),
+                    pw.Text(
+                      'Order Date: ${orderDate != null ? Helpers.formatDate(orderDate) : "-"}',
+                      style: const pw.TextStyle(fontSize: 9),
+                    ),
+                    if (deliveryDate != null)
+                      pw.Text(
+                        'Delivery Date: ${Helpers.formatDate(deliveryDate)}',
+                        style: const pw.TextStyle(fontSize: 9),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+
+            pw.SizedBox(height: 12),
+            pw.Divider(color: PdfColors.brown900, thickness: 1.5),
+            pw.SizedBox(height: 8),
+
+            // Customer Details Card
+            pw.Container(
+              padding: const pw.EdgeInsets.all(10),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.grey100,
+                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+                border: pw.Border.all(color: PdfColors.grey300),
+              ),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        'Customer: ${order.customerName ?? "-"}',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11),
+                      ),
+                      if (order.customerMobile != null)
+                        pw.Text('Phone: ${order.customerMobile}', style: const pw.TextStyle(fontSize: 10)),
+                    ],
+                  ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text('Order Status: ${order.orderStatus}',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                      pw.Text('Payment: ${order.paymentStatus}',
+                          style: const pw.TextStyle(fontSize: 10)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            pw.SizedBox(height: 14),
+
+            // Measurement Table (if available)
+            if (hasMeasurements) ...[
+              pw.Text(
+                'CUSTOMER MEASUREMENTS (Inches)',
+                style: pw.TextStyle(
+                  fontSize: 11,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.brown900,
+                ),
+              ),
+              pw.SizedBox(height: 6),
+              pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.brown300),
+                children: [
+                  pw.TableRow(
+                    decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                    children: m.allMeasurements.entries
+                        .where((e) => e.value != null)
+                        .map((e) => pw.Padding(
+                              padding: const pw.EdgeInsets.all(4),
+                              child: pw.Text(
+                                e.key,
+                                textAlign: pw.TextAlign.center,
+                                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+                              ),
+                            ))
+                        .toList(),
+                  ),
+                  pw.TableRow(
+                    children: m.allMeasurements.entries
+                        .where((e) => e.value != null)
+                        .map((e) => pw.Padding(
+                              padding: const pw.EdgeInsets.all(4),
+                              child: pw.Text(
+                                '${e.value}',
+                                textAlign: pw.TextAlign.center,
+                                style: const pw.TextStyle(fontSize: 9),
+                              ),
+                            ))
+                        .toList(),
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 14),
+            ],
+
+            // Particulars / Item table
+            pw.Text(
+              'ORDER PARTICULARS',
+              style: pw.TextStyle(
+                fontSize: 11,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.brown900,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              children: [
+                pw.TableRow(
+                  decoration: const pw.BoxDecoration(color: PdfColors.brown900),
+                  children: [
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Particulars / Item',
+                          style: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Dress Type',
+                          style: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Qty',
+                          textAlign: pw.TextAlign.center,
+                          style: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Amount ($currency)',
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                    ),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text(order.dressName.isNotEmpty ? order.dressName : order.dressType,
+                          style: const pw.TextStyle(fontSize: 10)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text(order.dressType, style: const pw.TextStyle(fontSize: 10)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('${order.quantity}',
+                          textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 10)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text(_fmt(order.totalAmount),
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                    ),
+                  ],
+                ),
+                if (order.notes != null && order.notes!.isNotEmpty)
+                  pw.TableRow(
+                    children: [
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(6),
+                        child: pw.Text('Notes: ${order.notes}',
+                            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                      ),
+                      pw.SizedBox(),
+                      pw.SizedBox(),
+                      pw.SizedBox(),
+                    ],
+                  ),
+              ],
+            ),
+
+            pw.SizedBox(height: 12),
+
+            // Payment Summary
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.end,
+              children: [
+                pw.Container(
+                  width: 200,
+                  child: pw.Column(
+                    children: [
+                      _buildSummaryRow('Total Amount:', '$currency${_fmt(order.totalAmount)}', bold: true),
+                      _buildSummaryRow('Advance Paid:', '$currency${_fmt(order.advanceAmount)}'),
+                      pw.Divider(color: PdfColors.grey400),
+                      _buildSummaryRow('Balance Due:', '$currency${_fmt(order.balanceAmount)}', bold: true),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            pw.Spacer(),
+
+            // Terms & Conditions
+            pw.Divider(color: PdfColors.grey300),
+            pw.Center(
+              child: pw.Text(
+                'Note: Please collect clothes within 90 days. Shop is not responsible for lost bills.',
+                style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+              ),
+            ),
+            pw.SizedBox(height: 4),
+            pw.Center(
+              child: pw.Text(
+                'Thank you for your business! - $shopName',
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.brown900),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return _savePdf(pdf, 'bill_${order.orderNumber}');
   }
 
   String _fmt(double v) => NumberFormat('#,##0.00').format(v);
