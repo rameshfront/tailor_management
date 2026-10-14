@@ -71,7 +71,6 @@ class _HomeScreenState extends State<HomeScreen>
     final orderProvider = context.watch<OrderProvider>();
     final stats = orderProvider.dashboardStats;
     final currency = settings.currency;
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: RefreshIndicator(

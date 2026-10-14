@@ -239,7 +239,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final theme = Theme.of(context);
     final currency = context.watch<SettingsProvider>().currency;
     final totalRevenue = _orders.fold(0.0, (s, o) => s + o.totalAmount);
-    final totalCollected = _orders.fold(0.0, (s, o) => s + o.advanceAmount);
     final totalBalance = _orders.fold(0.0, (s, o) => s + o.balanceAmount);
 
     return Scaffold(

@@ -6,7 +6,6 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../models/order.dart';
-import '../utils/constants.dart';
 import '../utils/helpers.dart';
 
 /// Service for generating PDF reports
@@ -295,6 +294,9 @@ class PdfService {
         ],
       ),
     );
+    return _savePdf(pdf, 'customer_report');
+  }
+
   /// Generate a professional order bill / invoice PDF using dynamic shop settings & customer measurements
   Future<File> generateOrderBillPdf({
     required Order order,
