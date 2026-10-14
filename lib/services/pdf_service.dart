@@ -334,18 +334,18 @@ class PdfService {
                       style: pw.TextStyle(
                         fontSize: 22,
                         fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.brown900,
+                        color: const PdfColor.fromInt(0xFF3E1F00),
                       ),
                     ),
                     if (ownerName.isNotEmpty)
                       pw.Text(
                         'Prop: $ownerName',
-                        style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey800),
+                        style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
                       ),
                     if (phone.isNotEmpty)
                       pw.Text(
                         'Cell: $phone',
-                        style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey800),
+                        style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
                       ),
                     if (address.isNotEmpty)
                       pw.Text(
@@ -360,7 +360,7 @@ class PdfService {
                     pw.Container(
                       padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: const pw.BoxDecoration(
-                        color: PdfColors.brown900,
+                        color: PdfColor.fromInt(0xFF3E1F00),
                         borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
                       ),
                       child: pw.Text(
@@ -392,7 +392,7 @@ class PdfService {
             ),
 
             pw.SizedBox(height: 12),
-            pw.Divider(color: PdfColors.brown900, thickness: 1.5),
+            pw.Divider(color: const PdfColor.fromInt(0xFF3E1F00), thickness: 1.5),
             pw.SizedBox(height: 8),
 
             // Customer Details Card
@@ -433,18 +433,18 @@ class PdfService {
             pw.SizedBox(height: 14),
 
             // Measurement Table (if available)
-            if (hasMeasurements && m != null) ...[
+            if (hasMeasurements && m != null && m!.allMeasurements.values.any((v) => v != null)) ...[
               pw.Text(
                 'CUSTOMER MEASUREMENTS (Inches)',
                 style: pw.TextStyle(
                   fontSize: 11,
                   fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.brown900,
+                  color: const PdfColor.fromInt(0xFF3E1F00),
                 ),
               ),
               pw.SizedBox(height: 6),
               pw.Table(
-                border: pw.TableBorder.all(color: PdfColors.brown300),
+                border: pw.TableBorder.all(color: const PdfColor.fromInt(0xFFD7CCC8)),
                 children: [
                   pw.TableRow(
                     decoration: const pw.BoxDecoration(color: PdfColors.grey200),
@@ -484,7 +484,7 @@ class PdfService {
               style: pw.TextStyle(
                 fontSize: 11,
                 fontWeight: pw.FontWeight.bold,
-                color: PdfColors.brown900,
+                color: const PdfColor.fromInt(0xFF3E1F00),
               ),
             ),
             pw.SizedBox(height: 6),
@@ -492,7 +492,7 @@ class PdfService {
               border: pw.TableBorder.all(color: PdfColors.grey300),
               children: [
                 pw.TableRow(
-                  decoration: const pw.BoxDecoration(color: PdfColors.brown900),
+                  decoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFF3E1F00)),
                   children: [
                     pw.Padding(
                       padding: const pw.EdgeInsets.all(6),
@@ -592,7 +592,7 @@ class PdfService {
             pw.Center(
               child: pw.Text(
                 'Thank you for your business! - $shopName',
-                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.brown900),
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF3E1F00)),
               ),
             ),
           ],
