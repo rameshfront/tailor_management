@@ -53,24 +53,42 @@ class _TailorShopAppState extends State<TailorShopApp> {
   void initState() {
     super.initState();
     _init();
+    // Safety fallback: maximum 2 seconds on splash screen
+    Future.delayed(const Duration(milliseconds: 2000), () {
+      if (mounted && !_initialized) {
+        setState(() => _initialized = true);
+      }
+    });
   }
 
   Future<void> _init() async {
-    final settings = context.read<SettingsProvider>();
-    final customers = context.read<CustomerProvider>();
-    final orders = context.read<OrderProvider>();
+    try {
+      final settings = context.read<SettingsProvider>();
+      final customers = context.read<CustomerProvider>();
+      final orders = context.read<OrderProvider>();
 
-    // Load settings first (needed for theme)
-    await settings.loadSettings();
+      // Load settings first (needed for theme) with timeout
+      await settings.loadSettings().timeout(
+            const Duration(seconds: 2),
+            onTimeout: () {},
+          );
 
-    // Then load data concurrently for faster startup
-    await Future.wait([
-      customers.loadCustomers(),
-      orders.loadOrders(),
-      orders.loadDashboardStats(),
-    ]);
-
-    if (mounted) setState(() => _initialized = true);
+      // Then load data concurrently
+      await Future.wait([
+        customers.loadCustomers(),
+        orders.loadOrders(),
+        orders.loadDashboardStats(),
+      ]).timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => [],
+      );
+    } catch (e) {
+      debugPrint('Startup init error: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _initialized = true);
+      }
+    }
   }
 
   @override
