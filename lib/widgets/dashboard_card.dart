@@ -31,9 +31,7 @@ class _DashboardCardState extends State<DashboardCard>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 150),
-      lowerBound: 0.0,
-      upperBound: 0.04,
+      duration: const Duration(milliseconds: 120),
     );
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),

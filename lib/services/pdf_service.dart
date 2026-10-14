@@ -433,7 +433,7 @@ class PdfService {
             pw.SizedBox(height: 14),
 
             // Measurement Table (if available)
-            if (hasMeasurements) ...[
+            if (hasMeasurements && m != null) ...[
               pw.Text(
                 'CUSTOMER MEASUREMENTS (Inches)',
                 style: pw.TextStyle(
@@ -448,7 +448,7 @@ class PdfService {
                 children: [
                   pw.TableRow(
                     decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-                    children: m.allMeasurements.entries
+                    children: m!.allMeasurements.entries
                         .where((e) => e.value != null)
                         .map((e) => pw.Padding(
                               padding: const pw.EdgeInsets.all(4),
@@ -461,7 +461,7 @@ class PdfService {
                         .toList(),
                   ),
                   pw.TableRow(
-                    children: m.allMeasurements.entries
+                    children: m!.allMeasurements.entries
                         .where((e) => e.value != null)
                         .map((e) => pw.Padding(
                               padding: const pw.EdgeInsets.all(4),
@@ -578,7 +578,7 @@ class PdfService {
               ],
             ),
 
-            pw.Spacer(),
+            pw.SizedBox(height: 18),
 
             // Terms & Conditions
             pw.Divider(color: PdfColors.grey300),
